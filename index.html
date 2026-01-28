@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Praveen Store Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        /* Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        :root {
+            --primary: #6a11cb;
+            --secondary: #2575fc;
+            --accent: #ff2d75;
+            --dark: #0f0c29;
+            --light: #f8f9fa;
+            --glass: rgba(255, 255, 255, 0.1);
+            --shadow: rgba(0, 0, 0, 0.2);
+            --glow: rgba(106, 17, 203, 0.5);
+            --success: #00b894;
+            --danger: #d63031;
+            --warning: #fdcb6e;
+        }
+
+        body {
+            background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
+            color: var(--light);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 0;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #6a11cb, #2575fc, #ff2d75);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .admin-badge {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 0 15px var(--glow);
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 1rem;
+        }
+
+        .tab-btn {
+            padding: 0.8rem 2rem;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: white;
+            background: rgba(106, 17, 203, 0.2);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1rem;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            border-radius: 3px;
+        }
+
+        /* Form Styles */
+        .form-container {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--glow);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px var(--glow);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, var(--danger), #ff7675);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(214, 48, 49, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, var(--success), #00cec9);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 184, 148, 0.4);
+        }
+
+        /* Apps List */
+        .apps-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .app-item {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .app-item:hover {
+            transform: translateY(-5px);
+            border-color: rgba(106, 17, 203, 0.4);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .app-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-right: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .app-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .app-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .app-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .app-actions .btn {
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            flex: 1;
+        }
+
+        /* Status Messages */
+        .status-message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .status-success {
+            background: rgba(0, 184, 148, 0.2);
+            border: 1px solid rgba(0, 184, 148, 0.4);
+            color: #00b894;
+        }
+
+        .status-error {
+            background: rgba(214, 48, 49, 0.2);
+            border: 1px solid rgba(214, 48, 49, 0.4);
+            color: #d63031;
+        }
+
+        .status-warning {
+            background: rgba(253, 203, 110, 0.2);
+            border: 1px solid rgba(253, 203, 110, 0.4);
+            color: #fdcb6e;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            opacity: 0.7;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .header { flex-direction: column; text-align: center; gap: 1rem; }
+            .tabs { flex-wrap: wrap; }
+            .tab-btn { flex: 1; min-width: 120px; }
+            .apps-list { grid-template-columns: 1fr; }
+            .form-buttons { flex-direction: column; }
+            .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">Mixy Store Admin</div>
+            <div class="admin-info">
+                <div class="admin-badge">
+                    <i class="fas fa-user-shield"></i> Admin Panel
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" id="addAppTab">
+                <i class="fas fa-plus-circle"></i> Add New App
+            </button>
+            <button class="tab-btn" id="manageAppsTab">
+                <i class="fas fa-th-large"></i> Manage Apps
+            </button>
+        </div>
+
+        <!-- Status Message -->
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
+
+        <!-- Add/Edit App Form -->
+        <div class="form-container" id="formContainer">
+            <h2 class="form-title" id="formTitle">Add New App</h2>
+            <form id="appForm">
+                <input type="hidden" id="appId">
+                
+                <div class="form-group">
+                    <label class="form-label" for="appName">App Name *</label>
+                    <input type="text" id="appName" class="form-input" placeholder="Enter app name" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="iconUrl">App Icon URL *</label>
+                    <input type="url" id="iconUrl" class="form-input" placeholder="https://example.com/icon.png" required>
+                    <small style="opacity: 0.7; display: block; margin-top: 0.5rem;">
+                        You can use image hosting services like Imgur or upload to Firebase Storage
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="description">Description *</label>
+                    <textarea id="description" class="form-input form-textarea" placeholder="Enter app description" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="downloadUrl">Download URL *</label>
+                    <input type="url" id="downloadUrl" class="form-input" placeholder="https://example.com/app.apk" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="version">Version (Optional)</label>
+                    <input type="text" id="version" class="form-input" placeholder="e.g., 2.5.1 MOD">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="size">File Size (Optional)</label>
+                    <input type="text" id="size" class="form-input" placeholder="e.g., 85 MB">
+                </div>
+
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-plus"></i> Add App
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="resetBtn">
+                        <i class="fas fa-redo"></i> Reset Form
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Apps List (for Manage Apps tab) -->
+        <div id="appsListContainer" style="display: none;">
+            <h2 class="form-title">Manage Apps</h2>
+            <div class="apps-list" id="appsList">
+                <!-- Apps will be loaded here dynamically -->
+                <div class="loading" id="loadingIndicator">
+                    <div class="spinner"></div>
+                    <p>Loading apps...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration (Same as user panel)
+        const firebaseConfig = {
+  apiKey: "AIzaSyABxUEoJVfCGIEWhkiFKB930W4YjO6ruBw",
+  authDomain: "edit-5e200.firebaseapp.com",
+  databaseURL: "https://edit-5e200-default-rtdb.firebaseio.com",
+  projectId: "edit-5e200",
+  storageBucket: "edit-5e200.firebasestorage.app",
+  messagingSenderId: "892315234840",
+  appId: "1:892315234840:web:e8e5a8d662614af0c5896d",
+  measurementId: "G-980DGT5KKQ"
+};
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // DOM Elements
+        const addAppTab = document.getElementById('addAppTab');
+        const manageAppsTab = document.getElementById('manageAppsTab');
+        const formContainer = document.getElementById('formContainer');
+        const appsListContainer = document.getElementById('appsListContainer');
+        const formTitle = document.getElementById('formTitle');
+        const appForm = document.getElementById('appForm');
+        const appIdInput = document.getElementById('appId');
+        const appNameInput = document.getElementById('appName');
+        const iconUrlInput = document.getElementById('iconUrl');
+        const descriptionInput = document.getElementById('description');
+        const downloadUrlInput = document.getElementById('downloadUrl');
+        const versionInput = document.getElementById('version');
+        const sizeInput = document.getElementById('size');
+        const submitBtn = document.getElementById('submitBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const appsList = document.getElementById('appsList');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // State
+        let isEditMode = false;
+        let allApps = [];
+
+        // Initialize the admin panel
+        function init() {
+            // Tab switching
+            addAppTab.addEventListener('click', () => switchTab('add'));
+            manageAppsTab.addEventListener('click', () => switchTab('manage'));
+
+            // Form submission
+            appForm.addEventListener('submit', handleFormSubmit);
+
+            // Reset form
+            resetBtn.addEventListener('click', resetForm);
+
+            // Load apps for management
+            loadAppsForManagement();
+
+            // Show success message if redirected from user panel
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('success') === 'true') {
+                showStatus('App added successfully!', 'success');
+            }
+        }
+
+        // Switch between tabs
+        function switchTab(tab) {
+            if (tab === 'add') {
+                addAppTab.classList.add('active');
+                manageAppsTab.classList.remove('active');
+                formContainer.style.display = 'block';
+                appsListContainer.style.display = 'none';
+                resetForm();
+            } else {
+                manageAppsTab.classList.add('active');
+                addAppTab.classList.remove('active');
+                formContainer.style.display = 'none';
+                appsListContainer.style.display = 'block';
+                loadAppsForManagement();
+            }
+        }
+
+        // Load apps for the management tab
+        function loadAppsForManagement() {
+            appsList.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading apps...</p>
+                </div>
+            `;
+
+            const appsRef = database.ref('apps');
+            
+            appsRef.on('value', (snapshot) => {
+                allApps = [];
+                appsList.innerHTML = '';
+                
+                if (snapshot.exists()) {
+                    const appsData = snapshot.val();
+                    
+                    // Convert to array
+                    Object.keys(appsData).forEach(key => {
+                        allApps.push({
+                            id: key,
+                            ...appsData[key]
+                        });
+                    });
+                    
+                    // Display apps
+                    renderAppsList();
+                } else {
+                    appsList.innerHTML = `
+                        <div class="empty-state">
+                            <h3>No Apps Yet</h3>
+                            <p>Add your first app using the "Add New App" tab.</p>
+                        </div>
+                    `;
+                }
+            }, (error) => {
+                console.error("Error loading apps:", error);
+                appsList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>Error Loading Apps</h3>
+                        <p>Please check your connection and try again.</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Render apps list for management
+        function renderAppsList() {
+            appsList.innerHTML = '';
+            
+            if (allApps.length === 0) {
+                appsList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No Apps Yet</h3>
+                        <p>Add your first app using the "Add New App" tab.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            allApps.forEach(app => {
+                const appItem = document.createElement('div');
+                appItem.className = 'app-item';
+                appItem.innerHTML = `
+                    <div class="app-header">
+                        <img src="${app.iconUrl || 'https://via.placeholder.com/60/6a11cb/ffffff?text=App'}" 
+                             alt="${app.name}" class="app-icon">
+                        <div style="flex: 1;">
+                            <h3 class="app-name">${app.name}</h3>
+                            <p class="app-description">${app.description || 'No description provided'}</p>
+                            <div style="display: flex; gap: 1rem; font-size: 0.8rem; opacity: 0.7;">
+                                ${app.version ? `<span><i class="fas fa-code-branch"></i> ${app.version}</span>` : ''}
+                                ${app.size ? `<span><i class="fas fa-weight-hanging"></i> ${app.size}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="app-actions">
+                        <button class="btn btn-primary edit-btn" data-app-id="${app.id}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-danger delete-btn" data-app-id="${app.id}">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                `;
+                
+                appsList.appendChild(appItem);
+            });
+            
+            // Add event listeners to edit and delete buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const appId = e.target.closest('.edit-btn').dataset.appId;
+                    editApp(appId);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const appId = e.target.closest('.delete-btn').dataset.appId;
+                    deleteApp(appId);
+                });
+            });
+        }
+
+        // Handle form submission
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const appData = {
+                name: appNameInput.value.trim(),
+                iconUrl: iconUrlInput.value.trim(),
+                description: descriptionInput.value.trim(),
+                downloadUrl: downloadUrlInput.value.trim(),
+                version: versionInput.value.trim(),
+                size: sizeInput.value.trim(),
+                createdAt: new Date().toISOString()
+            };
+            
+            // Validate required fields
+            if (!appData.name || !appData.iconUrl || !appData.description || !appData.downloadUrl) {
+                showStatus('Please fill all required fields.', 'error');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            submitBtn.disabled = true;
+            
+            if (isEditMode) {
+                // Update existing app
+                const appId = appIdInput.value;
+                database.ref('apps/' + appId).update(appData)
+                    .then(() => {
+                        showStatus('App updated successfully!', 'success');
+                        resetForm();
+                        switchTab('manage');
+                    })
+                    .catch(error => {
+                        console.error("Error updating app:", error);
+                        showStatus('Error updating app. Please try again.', 'error');
+                    })
+                    .finally(() => {
+                        submitBtn.innerHTML = '<i class="fas fa-check"></i> Update App';
+                        submitBtn.disabled = false;
+                    });
+            } else {
+                // Add new app
+                const newAppRef = database.ref('apps').push();
+                newAppRef.set(appData)
+                    .then(() => {
+                        showStatus('App added successfully!', 'success');
+                        resetForm();
+                    })
+                    .catch(error => {
+                        console.error("Error adding app:", error);
+                        showStatus('Error adding app. Please try again.', 'error');
+                    })
+                    .finally(() => {
+                        submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add App';
+                        submitBtn.disabled = false;
+                    });
+            }
+        }
+
+        // Edit an existing app
+        function editApp(appId) {
+            const app = allApps.find(a => a.id === appId);
+            if (!app) return;
+            
+            // Switch to add tab
+            switchTab('add');
+            
+            // Set form to edit mode
+            isEditMode = true;
+            appIdInput.value = appId;
+            appNameInput.value = app.name || '';
+            iconUrlInput.value = app.iconUrl || '';
+            descriptionInput.value = app.description || '';
+            downloadUrlInput.value = app.downloadUrl || '';
+            versionInput.value = app.version || '';
+            sizeInput.value = app.size || '';
+            
+            // Update UI for edit mode
+            formTitle.textContent = 'Edit App';
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Update App';
+            
+            // Scroll to form
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Delete an app
+        function deleteApp(appId) {
+            if (!confirm('Are you sure you want to delete this app? This action cannot be undone.')) {
+                return;
+            }
+            
+            database.ref('apps/' + appId).remove()
+                .then(() => {
+                    showStatus('App deleted successfully!', 'success');
+                    loadAppsForManagement();
+                })
+                .catch(error => {
+                    console.error("Error deleting app:", error);
+                    showStatus('Error deleting app. Please try again.', 'error');
+                });
+        }
+
+        // Reset the form
+        function resetForm() {
+            appForm.reset();
+            appIdInput.value = '';
+            isEditMode = false;
+            formTitle.textContent = 'Add New App';
+            submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add App';
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.style.display = 'flex';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
